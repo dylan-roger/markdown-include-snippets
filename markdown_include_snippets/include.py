@@ -29,7 +29,8 @@ from codecs import open
 from markdown.extensions import Extension
 from markdown.preprocessors import Preprocessor
 
-INC_SYNTAX = re.compile(r'\{!\s*(.+?)\s*!\}')
+#INC_SYNTAX = re.compile(r'\{!\s*(.+?)\s*!\}')
+INC_SYNTAX = re.compile(r'\{!\s*(.+?)\s*!(tag=([A-Za-z0-9_-]+))?\}')
 
 
 class MarkdownInclude(Extension):
@@ -77,23 +78,52 @@ class IncludePreprocessor(Preprocessor):
                         filename = os.path.normpath(
                             os.path.join(self.base_path,filename)
                         )
+                    addition=[]
                     try:
-                        with open(filename, 'r', encoding=self.encoding) as r:
-                            text = r.readlines()
+                        with open(filename, 'r', encoding=self.encoding) as input_data:
+                            tag_start_found=False
+                            tag_end_found=False
+                            source=[]
+                            if m.group(2):
+                                temp=[]
+                                tag=m.group(3)
+                                for l in input_data:
+                                    source.append(l.strip())
+                                    if 'tag::'+tag in l.strip():
+                                        tag_start_found=True
+                                        break
+
+                                for l in input_data:
+                                    source.append(l.strip())
+                                    if tag and 'end::'+tag in l.strip():
+                                        tag_end_found=True
+                                        break
+                                    temp.append(l.strip())
+
+                                if not tag_start_found or not tag_end_found:
+                                    prefix='WARNING - Include snippets - File: '+filename+', could not find '
+                                    for t in source:
+                                        addition.append(t)
+                                    if not tag_start_found and not tag_end_found:
+                                        print(prefix+'tag: '+tag)
+                                    elif not tag_start_found:
+                                        print(prefix+'start of tag: '+tag)
+                                    elif not tag_end_found:
+                                        print(prefix+'end of tag: '+tag)
+                                else:
+                                    for t in temp:
+                                        addition.append(t)
+                            else:
+                                for l in input_data:
+                                    addition.append(l.strip())
+
+
                     except Exception as e:
-                        print('Warning: could not find file {}. Ignoring '
-                            'include statement. Error: {}'.format(filename, e))
+                        print('WARNING - Include snippets - Ignoring file: '+filename+'. Error: {}'.format(e))
                         lines[loc] = INC_SYNTAX.sub('',line)
                         break
 
-                    line_split = INC_SYNTAX.split(line)
-                    if len(text) == 0:
-                        text.append('')
-                    for i in range(len(text)):
-                        text[i] = text[i].rstrip('\r\n')
-                    text[0] = line_split[0] + text[0]
-                    text[-1] = text[-1] + line_split[2]
-                    lines = lines[:loc] + text + lines[loc+1:]
+                    lines = lines[:loc] + addition + lines[loc+1:]
                     break
             else:
                 done = True

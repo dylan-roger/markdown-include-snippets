@@ -9,16 +9,15 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-  name = 'markdown-include',
+  name = 'markdown-include-snippets',
   packages = find_packages(),
-  version = '0.5.1',
-  description = 'This is an extension to Python-Markdown which provides an "include" function, similar to that found in LaTeX (and also the C pre-processor and Fortran). I originally wrote it for my FORD Fortran auto-documentation generator.',
+  version = '0.0.1',
+  description = 'This is an extension to Python-Markdown which provides an "include" function with snippets',
   long_description = long_description,
-  author = 'Chris MacMackin',
-  author_email = 'cmacmackin@gmail.com',
-  url = 'https://github.com/cmacmackin/markdown-include/', 
-  download_url = 'https://github.com/cmacmackin/markdown-include/tarball/v0.5.1',
-  keywords = ['Markdown', 'typesetting', 'include', 'plugin', 'extension'],
+  author = 'Francois Onimus',
+  author_email = 'francois.onimus@gmail.com',
+  url = 'https://github.com/fonimus/markdown-include-snippets',
+  keywords = ['Markdown', 'typesetting', 'include', 'plugin', 'snippets', 'extension'],
   classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha

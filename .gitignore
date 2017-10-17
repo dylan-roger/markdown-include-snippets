@@ -1,6 +1,9 @@
 *~
-markdown_include.egg-info/
+markdown_include_snippets.egg-info/
 dist/
+build/
 *.pyc
 test.py
 test.md
+.idea
+*.iml
