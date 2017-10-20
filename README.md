@@ -5,12 +5,15 @@ Based on project https://github.com/cmacmackin/markdown-include
 ## Installation
 
 ```sh
+# release
+pip install git+https://github.com/fonimus/markdown-include-snippets.git@<tag>
+# master
 pip install git+https://github.com/fonimus/markdown-include-snippets.git
 ```
 
 ## Usage
   
-### Whole file
+### Whole file inclusion
 
 ```java
 {!/path/to/file.java!}
@@ -30,7 +33,7 @@ public class Test {
 }
 ```
 
-### With tag=test
+### Tag snippet
 
 ```java
 {!/path/to/file.java!tag=test}
@@ -42,7 +45,7 @@ public class Test {
     }
 ```
 
-### With lines=3
+### Single line snippet
 
 ```java
 {!/path/to/file.java!lines=3}
@@ -52,7 +55,7 @@ public class Test {
 public class Test {
 ```
 
-### With lines=1,3,6
+### Line enumeration snippet
 
 ```java
 {!/path/to/file.java!lines=1,3,6}
@@ -64,7 +67,7 @@ public class Test {
     public void test(){
 ```
 
-### With lines=6-8
+### Line range snippet
 
 ```java
 {!/path/to/file.java!lines=6-8}
