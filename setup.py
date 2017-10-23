@@ -11,7 +11,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
   name = 'markdown-include-snippets',
   packages = find_packages(),
-  version = '0.0.1',
+  version = '0.6.2',
   description = 'This is an extension to Python-Markdown which provides an "include" function with snippets',
   long_description = long_description,
   author = 'Francois Onimus',
