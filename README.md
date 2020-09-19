@@ -13,10 +13,30 @@ pip install git+https://github.com/fonimus/markdown-include-snippets.git
 
 ## Usage
   
-### Whole file inclusion
+### Whole local file inclusion
 
 ```java
 {!/path/to/file.java!}
+```
+
+```java
+package io.fonimus;
+
+public class Test {
+
+    // tag::test
+    public void test(){
+
+    }
+    // end::test
+
+}
+```
+
+### Whole remote file inclusion
+
+```java
+{!https://url/to/file.java!}
 ```
 
 ```java

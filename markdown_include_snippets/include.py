@@ -25,7 +25,9 @@
 from __future__ import print_function
 import re
 import os.path
+import requests
 from codecs import open
+from tempfile import TemporaryFile
 from markdown.extensions import Extension
 from markdown.preprocessors import Preprocessor
 
@@ -35,7 +37,8 @@ REGEX_KEY_LINES = "lines"
 PREFIX = "WARNING - Include-snippets: ignore file: "
 FORMAT = ". Examples: lines=3 (line 3 only) | lines=3,5,7 (lines 3, 5 and 7) | lines=3-5 (lines 3 to 5)"
 
-INC_SYNTAX = re.compile(r"{!\s*(.+?)\s*!((\btag\b|\blines\b)=([A-Za-z0-9,_-]+))?\}")
+HTTP_HTTPS_SYNTAX = re.compile("https?")
+INC_SYNTAX = re.compile(r"{!\s*(.+?)\s*!((" + REGEX_KEY_TAG + r"|" + REGEX_KEY_LINES + r")=([\w\\/\.,-=]+))?\}")
 START_TAG = "tag::"
 END_TAG = "end::"
 
@@ -61,11 +64,11 @@ class MarkdownInclude(Extension):
 class IncludePreprocessor(Preprocessor):
     """
     This provides an "include" function for Markdown, similar to that found in
-    LaTeX (also the C pre-processor and Fortran). The syntax is {!filename!},
-    which will be replaced by the contents of filename. Any such statements in
-    filename will also be replaced. This replacement is done prior to any other
-    Markdown processing. All file-names are evaluated relative to the location
-    from which Markdown is being called.
+    LaTeX (also the C pre-processor and Fortran). The syntax is {!filename!} or
+    {!url!} which will be replaced by the contents of the file. Any such
+    statements in filename will also be replaced. This replacement is done prior
+    to any other Markdown processing. All file-names are evaluated relative to
+    the location from which Markdown is being called.
     """
 
     def __init__(self, md, config):
@@ -79,14 +82,20 @@ class IncludePreprocessor(Preprocessor):
             for line in lines:
                 loc = lines.index(line)
                 m = INC_SYNTAX.search(line)
-
                 if m:
+                    tmp_file = None
                     filename = m.group(1)
-                    filename = os.path.expanduser(filename)
-                    if not os.path.isabs(filename):
-                        filename = os.path.normpath(
-                            os.path.join(self.base_path, filename)
-                        )
+                    if HTTP_HTTPS_SYNTAX.search(filename) is not None:
+                        tmp_file = TemporaryFile()
+                        request_result = requests.get(filename)
+                        tmp_file.write(request_result.content)
+                        tmp_file.seek(0)
+                    else:
+                        filename = os.path.expanduser(filename)
+                        if not os.path.isabs(filename):
+                            filename = os.path.normpath(
+                                os.path.join(self.base_path, filename)
+                            )
                     addition = []
 
                     is_tag = False
@@ -126,47 +135,48 @@ class IncludePreprocessor(Preprocessor):
                                 wanted_lines = [int(value) - 1]
 
                     try:
-                        with open(filename, 'r', encoding=self.encoding) as input_data:
+                        if tmp_file is not None:
+                            file = tmp_file.file
+                        else:
+                            file = open(filename, 'r', self.encoding)
+                        with file:
+                            input_data = file.readlines()
                             tag_start_found = False
                             tag_end_found = False
                             source = []
                             if is_tag:
                                 temp = []
                                 for l in input_data:
-                                    source.append(strip(l))
-                                    if START_TAG + tag in strip(l):
+                                    source.append(strip(l, self.encoding))
+                                    if START_TAG + tag in strip(l, self.encoding):
                                         tag_start_found = True
                                         break
 
                                 for l in input_data:
-                                    source.append(strip(l))
-                                    if tag and END_TAG + tag in strip(l):
+                                    source.append(strip(l, self.encoding))
+                                    if tag and END_TAG + tag in strip(l, self.encoding):
                                         tag_end_found = True
                                         break
-                                    temp.append(strip(l))
+                                    temp.append(strip(l, self.encoding))
 
                                 if not tag_start_found or not tag_end_found:
                                     prefix = PREFIX + filename + ', could not find '
-                                    for t in source:
-                                        addition.append(t)
+                                    addition.extend(source)
                                     if not tag_start_found:
                                         print(prefix + 'start of tag: ' + tag)
                                     elif not tag_end_found:
                                         print(prefix + 'end of tag: ' + tag)
                                 else:
-                                    for t in temp:
-                                        addition.append(t)
+                                    addition.extend(temp)
                             elif is_lines:
-                                last = wanted_lines[-1]
-                                for index, l in enumerate(input_data):
-                                    if index > last:
+                                wanted_lines.sort()
+                                for index in wanted_lines:
+                                    if index >= len(input_data):
                                         break
-                                    if index in wanted_lines:
-                                        addition.append(strip(l))
-
+                                    addition.append(strip(input_data[index], self.encoding))
                             else:
                                 for l in input_data:
-                                    addition.append(strip(l))
+                                    addition.append(strip(l, self.encoding))
 
                     except Exception as e:
                         print(PREFIX + filename + '. Error: {}'.format(e))
@@ -180,8 +190,10 @@ class IncludePreprocessor(Preprocessor):
         return lines
 
 
-def strip(string):
-    return string.replace("\n", "")
+def strip(data, encoding):
+    if isinstance(data, (bytes, bytearray)):
+        return data.decode(encoding).replace("\r\n", "\r")
+    return data.replace("\r\n", "\r")
 
 
 def makeExtension(*args, **kwargs):
