@@ -136,47 +136,47 @@ class IncludePreprocessor(Preprocessor):
 
                     try:
                         if tmp_file is not None:
-                            file = tmp_file.file
+                            input_data = tmp_file.file.readlines()
                         else:
-                            file = open(filename, 'r', self.encoding)
-                        with file:
-                            input_data = file.readlines()
-                            tag_start_found = False
-                            tag_end_found = False
-                            source = []
-                            if is_tag:
-                                temp = []
-                                for l in input_data:
-                                    source.append(strip(l, self.encoding))
-                                    if START_TAG + tag in strip(l, self.encoding):
-                                        tag_start_found = True
-                                        break
+                            with open(filename, 'r', self.encoding) as f:
+                                input_data = f.readlines()
 
-                                for l in input_data:
-                                    source.append(strip(l, self.encoding))
-                                    if tag and END_TAG + tag in strip(l, self.encoding):
-                                        tag_end_found = True
-                                        break
-                                    temp.append(strip(l, self.encoding))
+                        tag_start_found = False
+                        tag_end_found = False
+                        source = []
+                        if is_tag:
+                            temp = []
+                            for l in input_data:
+                                source.append(strip(l, self.encoding))
+                                if START_TAG + tag in strip(l, self.encoding):
+                                    tag_start_found = True
+                                    break
 
-                                if not tag_start_found or not tag_end_found:
-                                    prefix = PREFIX + filename + ', could not find '
-                                    addition.extend(source)
-                                    if not tag_start_found:
-                                        print(prefix + 'start of tag: ' + tag)
-                                    elif not tag_end_found:
-                                        print(prefix + 'end of tag: ' + tag)
-                                else:
-                                    addition.extend(temp)
-                            elif is_lines:
-                                wanted_lines.sort()
-                                for index in wanted_lines:
-                                    if index >= len(input_data):
-                                        break
-                                    addition.append(strip(input_data[index], self.encoding))
+                            for l in input_data:
+                                source.append(strip(l, self.encoding))
+                                if tag and END_TAG + tag in strip(l, self.encoding):
+                                    tag_end_found = True
+                                    break
+                                temp.append(strip(l, self.encoding))
+
+                            if not tag_start_found or not tag_end_found:
+                                prefix = PREFIX + filename + ', could not find '
+                                addition.extend(source)
+                                if not tag_start_found:
+                                    print(prefix + 'start of tag: ' + tag)
+                                elif not tag_end_found:
+                                    print(prefix + 'end of tag: ' + tag)
                             else:
-                                for l in input_data:
-                                    addition.append(strip(l, self.encoding))
+                                addition.extend(temp)
+                        elif is_lines:
+                            wanted_lines.sort()
+                            for index in wanted_lines:
+                                if index >= len(input_data):
+                                    break
+                                addition.append(strip(input_data[index], self.encoding))
+                        else:
+                            for l in input_data:
+                                addition.append(strip(l, self.encoding))
 
                     except Exception as e:
                         print(PREFIX + filename + '. Error: {}'.format(e))
