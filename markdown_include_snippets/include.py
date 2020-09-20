@@ -143,25 +143,21 @@ class IncludePreprocessor(Preprocessor):
 
                         tag_start_found = False
                         tag_end_found = False
-                        source = []
                         if is_tag:
                             temp = []
                             for l in input_data:
-                                source.append(strip(l, self.encoding))
                                 if START_TAG + tag in strip(l, self.encoding):
                                     tag_start_found = True
-                                    break
-
-                            for l in input_data:
-                                source.append(strip(l, self.encoding))
-                                if tag and END_TAG + tag in strip(l, self.encoding):
+                                    continue
+                                elif tag and END_TAG + tag in strip(l, self.encoding):
                                     tag_end_found = True
                                     break
-                                temp.append(strip(l, self.encoding))
+                                if tag_start_found:
+                                    temp.append(strip(l, self.encoding))
 
                             if not tag_start_found or not tag_end_found:
                                 prefix = PREFIX + filename + ', could not find '
-                                addition.extend(source)
+                                addition.extend(input_data)
                                 if not tag_start_found:
                                     print(prefix + 'start of tag: ' + tag)
                                 elif not tag_end_found:

@@ -1,0 +1,5 @@
+This is a simple test file to include
+
+tag::doc
+This part will only be included if the tag is used
+end::doc
